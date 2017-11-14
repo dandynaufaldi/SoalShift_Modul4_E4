@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static const char *dirpath = "/home/afahd/Downloads";
+char dirpath[100];
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
@@ -98,6 +98,13 @@ static struct fuse_operations xmp_oper = {
 
 int main(int argc, char *argv[])
 {
+	char currdir[100];
+  	char homedir[100];
+  	getcwd(currdir, 99);
+  	chdir(getenv("HOME"));
+ 	getcwd(homedir, 99);
+  	chdir(currdir);
+	sprintf(dirpath, "%s/Documents", homedir);
 	umask(0);
 	return fuse_main(argc, argv, &xmp_oper, NULL);
 }
