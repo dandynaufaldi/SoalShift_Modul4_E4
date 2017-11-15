@@ -135,7 +135,7 @@ static int e4_read(const char *path, char *buf, size_t size, off_t offset,
 
 
 
-static struct fuse_operations xmp_oper = {
+static struct fuse_operations e4_oper = {
 	.getattr	= e4_getattr,
 	.rename  	= e4_rename,
 	.readdir	= e4_readdir,
@@ -163,5 +163,5 @@ int main(int argc, char *argv[])
 	sprintf(fusedir,"%s/%s",currdir, argv[1]);
 	//printf("%s\n",fusedir);
 	umask(0);
-	return fuse_main(argc, argv, &xmp_oper, NULL);
+	return fuse_main(argc, argv, &e4_oper, NULL);
 }

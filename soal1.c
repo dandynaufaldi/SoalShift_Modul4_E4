@@ -13,7 +13,7 @@
 char dirpath[100];
 
 
-static int xmp_getattr(const char *path, struct stat *stbuf)
+static int e4_getattr(const char *path, struct stat *stbuf)
 {
   int res;
 	char fpath[1000];
@@ -26,7 +26,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
-static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int e4_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
   char fpath[1000];
@@ -61,7 +61,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
+static int e4_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
   	char fpath[1000];
@@ -109,10 +109,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 
 
 
-static struct fuse_operations xmp_oper = {
-	.getattr	= xmp_getattr,
-	.readdir	= xmp_readdir,
-	.read		= xmp_read,
+static struct fuse_operations e4_oper = {
+	.getattr	= e4_getattr,
+	.readdir	= e4_readdir,
+	.read		= e4_read,
 };
 
 
@@ -127,5 +127,5 @@ int main(int argc, char *argv[])
   	chdir(currdir);
 	sprintf(dirpath, "%s/Documents", homedir);
 	umask(0);
-	return fuse_main(argc, argv, &xmp_oper, NULL);
+	return fuse_main(argc, argv, &e4_oper, NULL);
 }
