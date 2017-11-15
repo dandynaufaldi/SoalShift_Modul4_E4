@@ -138,7 +138,7 @@ static int E4_open(const char *path, struct fuse_file_info *fi)
 		printf("nemu %d\n", nemu++);
 		char *tmppath = path+1;
 		char command[2048], command2[2048];
-		sprintf(command, "notify-send \"File %s yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"", tmppath);
+		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		system(command);
 		sprintf(command2, "chmod 000 %s", tmppath);
