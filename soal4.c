@@ -43,8 +43,9 @@ static int E4_getattr(const char *path, struct stat *stbuf)
 static int E4_chmod(const char *path, mode_t mode)
 {
 	int res;
-
-	res = chmod(path, mode);
+	char fpath[1000];
+	sprintf(fpath,"%s%s",dirpath,path);
+	res = chmod(fpath, mode);
 	if (res == -1)
 		return -errno;
 
@@ -134,21 +135,23 @@ static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 
 static int E4_open(const char *path, struct fuse_file_info *fi)
 {
-	if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
+	char fpath[1000];
+	sprintf(fpath,"%s%s",dirpath,path);
+	if (check(fpath)==1){
 		printf("nemu %d\n", nemu++);
 		char *tmppath = path+1;
 		char command[2048], command2[2048];
 		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		system(command);
-		sprintf(command2, "chmod 0000 %s", tmppath);
-		system(command2);
-		//E4_chmod(path, S_IRUSR|S_IRGRP|S_IROTH);
-		return -errno;
+		// sprintf(command2, "chmod 0000 %s", tmppath);
+		// system(command2);
+		int r = chmod(fpath, 0000);
+		return 0;
 	}
 	int res;
 
-	res = open(path, fi->flags);
+	res = open(fpath, fi->flags);
 	if (res == -1)
 		return -errno;
 
@@ -160,9 +163,10 @@ static int E4_open(const char *path, struct fuse_file_info *fi)
 static int E4_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
 
     (void) fi;
-
+    char fpath[1000];
+	sprintf(fpath,"%s%s",dirpath,path);
     int res;
-    res = creat(path, mode);
+    res = creat(fpath, mode);
     if(res == -1)
 	return -errno;
 
