@@ -141,7 +141,7 @@ static int E4_open(const char *path, struct fuse_file_info *fi)
 		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		system(command);
-		sprintf(command2, "chmod 000 %s", tmppath);
+		sprintf(command2, "chmod 0000 %s", tmppath);
 		system(command2);
 		//E4_chmod(path, S_IRUSR|S_IRGRP|S_IROTH);
 		return -errno;
