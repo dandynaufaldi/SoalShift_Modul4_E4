@@ -40,6 +40,41 @@ static int E4_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
+// static int E4_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
+// {
+//     DIR *dp;
+//     struct dirent *de;
+//     int res = 0;
+//     char fpath[1000];
+//     sprintf(fpath, "%s%s", dirpath, path);
+//     dp = opendir(fpath);
+//     if(dp == NULL)
+//         return -errno;
+
+//     while((de = readdir(dp)) != NULL)
+//     {
+//         res = filler(h, de->d_name, de->d_type);
+//         if(res != 0)
+//             break;
+//     }
+
+//     closedir(dp);
+//     return res;
+// }
+
+static int E4_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+    int res;
+    char fpath[1000];
+    sprintf(fpath, "%s%s", dirpath, path);
+    res = mknod(fpath, mode, rdev);
+    if(res == -1)
+        return -errno;
+
+    return 0;
+}
+
+
 static int E4_chmod(const char *path, mode_t mode)
 {
 	int res;
@@ -55,13 +90,6 @@ static int E4_chmod(const char *path, mode_t mode)
 static int E4_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
-// if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
-// 		char command[2048];
-// 		//sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-// 		sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-// 		system(command);
-// 		//return 0;
-// 	}
   char fpath[1000];
 	if(strcmp(path,"/") == 0)
 	{
@@ -98,17 +126,7 @@ static int E4_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	// if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
-	// 	printf("nemu %d\n", nemu++);
-	// 	char command[2048], command2[2048];
-	// 	sprintf(command, "notify-send \"File %s yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"", path);
-	// 	//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-	// 	system(command);
-	// 	// sprintf(command2, "chmod 444 \"%s\"", path);
-	// 	// system(command2);
-	// 	E4_chmod(path, S_IRUSR|S_IRGRP|S_IROTH);
-	// 	//return 0;
-	// }
+	
   char fpath[1000];
 	if(strcmp(path,"/") == 0)
 	{
@@ -116,6 +134,13 @@ static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 		sprintf(fpath,"%s",path);
 	}
 	else sprintf(fpath, "%s%s",dirpath,path);
+	if (check(fpath)==1){		
+		char command[2048];
+		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
+		system(command);
+		int r = chmod(fpath, 0000);
+		return 0;
+	}
 	int res = 0;
   int fd = 0 ;
 
@@ -132,23 +157,47 @@ static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 	return res;
 }
 
+static int E4_write(const char *path, const char *buf, size_t size, off_t offset)
+{
+    int fd;
+    int res;
+    int res1;
+    char fpath[1000],temp1[1000];
+
+    sprintf(fpath, "%s%s.copy", dirpath, path);
+
+    fd = open(fpath, O_WRONLY | O_CREAT); 
+    if(fd == -1){
+    	char command[2048];
+		sprintf(command, "notify-send \"Gagal membuka dir baru untuk file copy\"");
+		system(command);
+        return -errno;
+    }
+    else {
+    	char command[2048];
+		sprintf(command, "notify-send \"Sukses membuka dir baru untuk file copy\"");
+		system(command);
+    }
+
+    res = pwrite(fd, buf, size, offset);
+    if(res == -1)
+        res = -errno;
+
+    close(fd);
+    return res;
+}
 
 static int E4_open(const char *path, struct fuse_file_info *fi)
 {
 	char fpath[1000];
 	sprintf(fpath,"%s%s",dirpath,path);
-	if (check(fpath)==1){
-		printf("nemu %d\n", nemu++);
-		char *tmppath = path+1;
-		char command[2048], command2[2048];
-		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-		//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-		system(command);
-		// sprintf(command2, "chmod 0000 %s", tmppath);
-		// system(command2);
-		int r = chmod(fpath, 0000);
-		return 0;
-	}
+	// if (check(fpath)==1){		
+	// 	char command[2048];
+	// 	sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
+	// 	system(command);
+	// 	int r = chmod(fpath, 0000);
+	// 	return 0;
+	// }
 	int res;
 
 	res = open(fpath, fi->flags);
@@ -160,29 +209,16 @@ static int E4_open(const char *path, struct fuse_file_info *fi)
 }
 
 
-static int E4_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
-
-    (void) fi;
-    char fpath[1000];
-	sprintf(fpath,"%s%s",dirpath,path);
-    int res;
-    res = creat(fpath, mode);
-    if(res == -1)
-	return -errno;
-
-    close(res);
-
-    return 0;
-}
-
 
 static struct fuse_operations E4_oper = {
 	.getattr	= E4_getattr,
 	.readdir	= E4_readdir,
 	.read		= E4_read,
-	.create     = E4_create,
 	.open		= E4_open,
 	.chmod		= E4_chmod,
+	.write 		= E4_write,
+//	.getdir 	= E4_getdir,
+	.mknod 		= E4_mknod,
 };
 
 
