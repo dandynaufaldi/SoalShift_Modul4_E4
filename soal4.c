@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 char dirpath[2048];
 int nemu = 0;
@@ -36,6 +37,17 @@ static int E4_getattr(const char *path, struct stat *stbuf)
 	if (res == -1)
 		return -errno;
 	
+	return 0;
+}
+
+static int E4_chmod(const char *path, mode_t mode)
+{
+	int res;
+
+	res = chmod(path, mode);
+	if (res == -1)
+		return -errno;
+
 	return 0;
 }
 
@@ -85,16 +97,17 @@ static int E4_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
-		printf("nemu %d\n", nemu++);
-		char command[2048], command2[2048];
-		//sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-		sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-		system(command);
-		sprintf(command2, "chmod 444 \"%s\"", path);
-		system(command2);
-		//return 0;
-	}
+	// if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
+	// 	printf("nemu %d\n", nemu++);
+	// 	char command[2048], command2[2048];
+	// 	sprintf(command, "notify-send \"File %s yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"", path);
+	// 	//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
+	// 	system(command);
+	// 	// sprintf(command2, "chmod 444 \"%s\"", path);
+	// 	// system(command2);
+	// 	E4_chmod(path, S_IRUSR|S_IRGRP|S_IROTH);
+	// 	//return 0;
+	// }
   char fpath[1000];
 	if(strcmp(path,"/") == 0)
 	{
@@ -123,11 +136,15 @@ static int E4_open(const char *path, struct fuse_file_info *fi)
 {
 	if (strcmp(path, ".")!=0 && strcmp(path, "..")!=0 && check(path)==1){
 		printf("nemu %d\n", nemu++);
-		char command[2048];
-		//sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
-		sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
+		char *tmppath = path+1;
+		char command[2048], command2[2048];
+		sprintf(command, "notify-send \"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
+		//sprintf(command, "zenity --error --text=\"File yang anda buka adalah file hasil salinan. File tidak bisa diubah maupun disalin kembali!\"");
 		system(command);
-		//return 0;
+		sprintf(command2, "chmod 0000 %s", tmppath);
+		system(command2);
+		//E4_chmod(path, S_IRUSR|S_IRGRP|S_IROTH);
+		return -errno;
 	}
 	int res;
 
@@ -161,8 +178,8 @@ static struct fuse_operations E4_oper = {
 	.read		= E4_read,
 	.create     = E4_create,
 	.open		= E4_open,
+	.chmod		= E4_chmod,
 };
-
 
 
 int main(int argc, char *argv[])
