@@ -95,17 +95,20 @@ static int e4_read(const char *path, char *buf, size_t size, off_t offset,
 		char zpath[1000];
 		char ypath[1000];
 		char xpath[1000];
+		char *vpath;
+		vpath = strrchr(path, '/');
 		/*sprintf(ypath,"%s%s",fusedir,path);*/
-		sprintf(xpath, "%s/rahasia", dirpath);
-		mkdir(xpath, 0755);
-		sprintf(xpath, "%s/rahasia%s", dirpath, path);
-		rename(fpath, xpath);
-		sprintf(zpath,"%s.ditandai",xpath);
-		rename(xpath, zpath);
+		sprintf(zpath,"%s.ditandai",fpath);
+		rename(fpath, zpath);
 /*		sprintf(ypath, "%s.ditandai", path);
 		sprintf(ypath, "%s%s",xpath, ypath);
 		sprintf(ypath, "mv %s %s",zpath, ypath);*/
-		chmod(zpath, 0000);
+		sprintf(xpath, "%s/rahasia", dirpath);
+		mkdir(xpath, 0755);
+		sprintf(ypath, "%s.ditandai", vpath);
+		sprintf(xpath, "%s/rahasia%s", dirpath, ypath);
+		rename(zpath, xpath);
+		chmod(xpath, 0000);
 //		system(ypath);
 		system("zenity --error --text=\"Terjadi Kesalahan! File berisi konten berbahaya.\n\" --title=\"ERROR\"");
 		return -errno;
