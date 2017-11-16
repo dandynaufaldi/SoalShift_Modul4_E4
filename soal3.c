@@ -90,59 +90,43 @@ static int E4_read(const char *path, char *buf, size_t size, off_t offset,
 static int E4_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
+	char fpath[1000];
+	if(strcmp(path,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,path);
 
-	res = open(path, fi->flags);
+	res = open(fpath, fi->flags);
 	if (res == -1)
 		return -errno;
 
 	close(res);
 	return 0;
 }
-
-static int E4_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
-
-    (void) fi;
-
-    int res;
-    res = creat(path, mode);
-    if(res == -1)
-	return -errno;
-
-    close(res);
-
-    return 0;
-}
-
-static int E4_access(const char *path, int mask)
-{
-	int res;
-
-	res = access(path, mask);
-	if (res == -1)
-		return -errno;
-
-	return 0;
-}
-
-static int E4_mkdir(const char *path, mode_t mode)
-{
-	int res;
-
-	res = mkdir(path, mode);
-	if (res == -1)
-		return -errno;
-
-	return 0;
-}
-
 static int E4_truncate(const char *path, off_t size)
 {
 	int res;
-
-	res = truncate(path, size);
-	if (res == -1)
+	char dpath[1000];
+	char cmd[1000];
+	sprintf(dpath, "%s/simpanan", dirpath);
+	mkdir(dpath, 0755);
+	char *fname;
+	fname = strrchr(path, '/');
+	sprintf(dpath,"%s%s",dpath, fname);
+	char fpath[1000];
+	if(strcmp(path,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,path);
+	sprintf(cmd, "cp %s %s",fpath, dpath);
+	system(cmd);
+	res = truncate(dpath, size);
+	if(res == -1)
 		return -errno;
-
 	return 0;
 }
 
@@ -151,9 +135,22 @@ static int E4_write(const char *path, const char *buf, size_t size,
 {
 	int fd;
 	int res;
-
+	char fpath[1000];
+	char dpath[1000];
+	sprintf(dpath, "%s/simpanan", dirpath);
+	mkdir(dpath, 0755);
+	char *fname;
+	fname = strrchr(path, '/');
+	sprintf(dpath,"%s%s",dpath, fname);
+	if(strcmp(path,"/") == 0)
+	{
+		path=dirpath;
+		sprintf(fpath,"%s",path);
+	}
+	else sprintf(fpath, "%s%s",dirpath,path);
+	
 	(void) fi;
-	fd = open(path, O_WRONLY);
+	fd = open(dpath, O_WRONLY);
 	if (fd == -1)
 		return -errno;
 
@@ -169,11 +166,8 @@ static struct fuse_operations E4_oper = {
 	.getattr	= E4_getattr,
 	.readdir	= E4_readdir,
 	.read		= E4_read,
-	.create     = E4_create,
-	.open		= E4_open,
-	.access     = E4_access,
-	.mkdir 		= E4_mkdir,
-	.truncate 	= E4_truncate,
+	.truncate	= E4_truncate,
+	.open 		= E4_open,
 	.write 		= E4_write,
 };
 
