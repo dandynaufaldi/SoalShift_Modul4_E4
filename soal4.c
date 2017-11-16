@@ -10,13 +10,44 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-char dirpath[2048];
+char dirpath[2048], copypath[2048];
 int nemu = 0;
 static int check(const char *path)
 {
 	char *tmp = strrchr(path, '.');
 	if (!tmp) return 0;
 	if (strcmp(tmp, ".copy")==0) return 1;
+	return 0;
+}
+
+static int checkcpy(const char *path)
+{
+	char *tmp = strrchr(path, '(');
+	if (!tmp) return 0;
+	if (tmp + 5 <= path + strlen(path) -1){
+		char new[2048]; strncpy(new, tmp, 6);
+		if (strcmp(new, "(copy)")==0){
+			sprintf(copypath, "%s", dirpath);
+			int len1 = tmp - path;
+			strncat(copypath, path, len1);
+			int i;
+			for(i=len1;i<strlen(path);i++){
+				if(path[i]==')' && path[i+1]=='.'){
+					int j = i+1, k = strlen(copypath);
+					while(j < strlen(path)){
+						copypath[k] = path[j];
+						j++;
+						k++;
+					}
+					copypath[k] = '\0';
+					// char command[2048];
+					// sprintf(command, "notify-send \"copypath = %s\"", copypath);
+					// system(command);
+				}
+			}
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -66,6 +97,10 @@ static int E4_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     int res;
     char fpath[1000];
+    // if (checkcpy(path)==1){
+    // 	sprintf(fpath, "%s.copy", copypath);
+    // }
+    // else 
     sprintf(fpath, "%s%s", dirpath, path);
     res = mknod(fpath, mode, rdev);
     if(res == -1)
@@ -163,20 +198,23 @@ static int E4_write(const char *path, const char *buf, size_t size, off_t offset
     int res;
     int res1;
     char fpath[1000],temp1[1000];
-
-    sprintf(fpath, "%s%s.copy", dirpath, path);
+    // if (checkcpy(path)==1){
+    // 	sprintf(fpath, "%s.copy", copypath);
+    // }
+    // else 
+    sprintf(fpath, "%s%s", dirpath, path);
 
     fd = open(fpath, O_WRONLY | O_CREAT); 
     if(fd == -1){
-    	char command[2048];
-		sprintf(command, "notify-send \"Gagal membuka dir baru untuk file copy\"");
-		system(command);
+  //   	char command[2048];
+		// sprintf(command, "notify-send \"Gagal membuka dir baru untuk file copy\"");
+		// system(command);
         return -errno;
     }
     else {
-    	char command[2048];
-		sprintf(command, "notify-send \"Sukses membuka dir baru untuk file copy\"");
-		system(command);
+  //   	char command[2048];
+		// sprintf(command, "notify-send \"Sukses membuka dir baru untuk file copy\"");
+		// system(command);
     }
 
     res = pwrite(fd, buf, size, offset);
@@ -184,6 +222,12 @@ static int E4_write(const char *path, const char *buf, size_t size, off_t offset
         res = -errno;
 
     close(fd);
+    if (checkcpy(path)==1){
+    	char from[1000], to[1000];
+    	sprintf(from,"%s%s", dirpath, path);
+    	sprintf(to, "%s.copy", copypath);
+    	rename(from, to);
+    }
     return res;
 }
 
